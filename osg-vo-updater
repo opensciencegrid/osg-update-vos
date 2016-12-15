@@ -72,10 +72,9 @@ def _download_vodata(repo=None):
     subprocess.check_call("rpm2cpio %s | cpio -id" % pipes.quote(vodata_rpm), shell=True)
 
 
-def _rearrange_vodata():
-    """Rearrange extracted vo-client RPM into vodata directory. Current
-    directory must be the directory that contains the extracted vo-client RPM,
-    and the vodata directory must not exist.
+def _move_vodata(destdir):
+    """Move VO data to destdir. Current directory must be the directory that
+    vomses and vomsdir are in, and destdir must be an absolute path.
     """
     # The vo-client RPM has this structure:
     #
@@ -84,48 +83,42 @@ def _rearrange_vodata():
     #
     # we want to rearrange it to this structure:
     #
-    # vodata/vomses
-    # vodata/vomsdir/*/*.lsc
+    # (destdir)/vomses
+    # (destdir)/vomsdir/*/*.lsc
 
-    os.mkdir('vodata')
-    shutil.move('etc/vomses', 'vodata/vomses')
-    shutil.move('etc/grid-security/vomsdir', 'vodata/vomsdir')
+    if not os.path.exists(destdir):
+        os.makedirs(destdir)
 
+    vomsdir = os.path.join(destdir, 'vomsdir')
+    newdir = os.path.join(destdir, '.vomsdir.new')
+    olddir = os.path.join(destdir, '.vomsdir.old')
 
-def _deploy_vodata(vo_dir):
-    """Move VO data (in vodata directory) to vo_dir. Current directory must be
-    the directory that vodata is in, and vo_dir must be an absolute path.
-    """
-    # /path/to/vo_dir -> /path/to/.vo_dir.new
-    newdir = os.path.join(os.path.dirname(vo_dir), '.' + os.path.basename(vo_dir) + '.new')
-    # /path/to/vo_dir -> /path/to/.vo_dir.old
-    olddir = os.path.join(os.path.dirname(vo_dir), '.' + os.path.basename(vo_dir) + '.old')
+    shutil.move('etc/vomses', os.path.join(destdir, 'vomses'))
 
     if os.path.exists(newdir):
         shutil.rmtree(newdir)
 
-    shutil.move('vodata', newdir)
+    shutil.move('etc/grid-security/vomsdir', newdir)
 
     if os.path.exists(olddir):
         shutil.rmtree(olddir)
 
-    if os.path.exists(vo_dir):
-        os.rename(vo_dir, olddir)
-    os.rename(newdir, vo_dir)
+    if os.path.exists(vomsdir):
+        os.rename(vomsdir, olddir)
+    os.rename(newdir, vomsdir)
 
     shutil.rmtree(olddir, ignore_errors=True)
 
 
-def update_vodata(vo_dir, repo=None):
+def update_vodata(destdir, repo=None):
     "Fetch the VO data, and move it to its proper place"
-    vo_dir = os.path.abspath(vo_dir)
+    destdir = os.path.abspath(destdir)
     oldcwd = os.getcwd()
     tempdir = tempfile.mkdtemp(prefix='vodata')
     try:
         os.chdir(tempdir)
         _download_vodata(repo)
-        _rearrange_vodata()
-        _deploy_vodata(vo_dir)
+        _move_vodata(destdir)
     finally:
         os.chdir(oldcwd)
         shutil.rmtree(tempdir)
