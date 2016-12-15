@@ -1,0 +1,146 @@
+#!/usr/bin/env python2
+# (ignore bad script name) pylint: disable=C0103
+"""
+A script for downloading VO data.
+"""
+from __future__ import print_function
+
+import errno
+import glob
+import os
+import pipes
+import shutil
+import subprocess
+import sys
+import tempfile
+import traceback
+
+from email.mime.text import MIMEText
+from optparse import OptionParser
+
+
+verbose = False
+
+class Error(Exception):
+    "Class for expected exceptions"
+    pass
+
+
+def get_options(argv):
+    "Parse, validate, and transform command-line options."
+    parser = OptionParser("%prog [options]\n")
+
+    parser.add_option("--destdir", metavar="DIR", default='.',
+                      help="The directory to download VO data into. ")
+    parser.add_option("--repo", metavar="REPO", default=None,
+                      help="The specific yum repo to download the VO data from")
+
+    options = parser.parse_args(argv[1:])[0] # raises SystemExit(2) on error
+
+    return options
+
+
+def type_of_exception(exception_object):
+    "Return the class name of an exception as a string"
+    if isinstance(exception_object, Exception):
+        return str(exception_object.__class__.__name__)
+
+
+def _download_vodata(repo=None):
+    """Download and extract the vo-client RPM. Current directory should be an
+    empty temporary directory.
+    """
+    args = ['yumdownloader', 'vo-client']
+    if repo:
+        args.append('--disablerepo=*')
+        args.append('--enablerepo=' + repo)
+    try:
+        subprocess.check_call(args)
+    except OSError as err:
+        if err.errno == errno.ENOENT:
+            raise Error("yumdownloader not found -- install yum-utils")
+        else:
+            raise
+    except subprocess.CalledProcessError as err:
+        raise Error("Error downloading %s: %s" % ('vo-client', err))
+
+    try:
+        vodata_rpm = glob.glob('vo-client-*.rpm')[0]
+    except IndexError as err:
+        raise Error("Downloaded RPM not found")
+
+    subprocess.check_call("rpm2cpio %s | cpio -id" % pipes.quote(vodata_rpm), shell=True)
+
+
+def _rearrange_vodata():
+    """Rearrange extracted vo-client RPM into vodata directory. Current
+    directory must be the directory that contains the extracted vo-client RPM,
+    and the vodata directory must not exist.
+    """
+    # The vo-client RPM has this structure:
+    #
+    # etc/vomses
+    # etc/grid-security/vomsdir/*/*.lsc
+    #
+    # we want to rearrange it to this structure:
+    #
+    # vodata/vomses
+    # vodata/vomsdir/*/*.lsc
+
+    os.mkdir('vodata')
+    shutil.move('etc/vomses', 'vodata/vomses')
+    shutil.move('etc/grid-security/vomsdir', 'vodata/vomsdir')
+
+
+def _deploy_vodata(vo_dir):
+    """Move VO data (in vodata directory) to vo_dir. Current directory must be
+    the directory that vodata is in, and vo_dir must be an absolute path.
+    """
+    # /path/to/vo_dir -> /path/to/.vo_dir.new
+    newdir = os.path.join(os.path.dirname(vo_dir), '.' + os.path.basename(vo_dir) + '.new')
+    # /path/to/vo_dir -> /path/to/.vo_dir.old
+    olddir = os.path.join(os.path.dirname(vo_dir), '.' + os.path.basename(vo_dir) + '.old')
+
+    if os.path.exists(newdir):
+        shutil.rmtree(newdir)
+
+    shutil.move('vodata', newdir)
+
+    if os.path.exists(olddir):
+        shutil.rmtree(olddir)
+
+    if os.path.exists(vo_dir):
+        os.rename(vo_dir, olddir)
+    os.rename(newdir, vo_dir)
+
+    shutil.rmtree(olddir, ignore_errors=True)
+
+
+def update_vodata(vo_dir, repo=None):
+    "Fetch the VO data, and move it to its proper place"
+    vo_dir = os.path.abspath(vo_dir)
+    oldcwd = os.getcwd()
+    tempdir = tempfile.mkdtemp(prefix='vodata')
+    try:
+        os.chdir(tempdir)
+        _download_vodata(repo)
+        _rearrange_vodata()
+        _deploy_vodata(vo_dir)
+    finally:
+        os.chdir(oldcwd)
+        shutil.rmtree(tempdir)
+
+
+def main():
+    options = get_options(sys.argv)
+    try:
+        update_vodata(options.destdir, options.repo)
+    except Error as err:
+        print(str(err), file=sys.stderr)
+        return 1
+
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(main())
+
