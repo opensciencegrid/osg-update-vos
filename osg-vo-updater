@@ -69,7 +69,7 @@ def _download_vodata(repo=None):
     except IndexError as err:
         raise Error("Downloaded RPM not found")
 
-    subprocess.check_call("rpm2cpio %s | cpio -id" % pipes.quote(vodata_rpm), shell=True)
+    subprocess.check_call("rpm2cpio %s | cpio -id --quiet" % pipes.quote(vodata_rpm), shell=True)
 
 
 def _move_vodata(destdir):
@@ -119,6 +119,7 @@ def update_vodata(destdir, repo=None):
         os.chdir(tempdir)
         _download_vodata(repo)
         _move_vodata(destdir)
+        print("VO data downloaded to " + destdir)
     finally:
         os.chdir(oldcwd)
         shutil.rmtree(tempdir)
