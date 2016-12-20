@@ -81,19 +81,21 @@ def _move_vodata(destdir):
     # etc/vomses
     # etc/grid-security/vomsdir/*/*.lsc
     #
-    # we want to rearrange it to this structure:
-    #
-    # (destdir)/vomses
-    # (destdir)/vomsdir/*/*.lsc
+    # Move it so that "etc" is replaced by destdir.
+    # Try not to leave vomsdir in an inconsistent state if an error happens.
 
     if not os.path.exists(destdir):
         os.makedirs(destdir)
 
-    vomsdir = os.path.join(destdir, 'vomsdir')
-    newdir = os.path.join(destdir, '.vomsdir.new')
-    olddir = os.path.join(destdir, '.vomsdir.old')
-
     shutil.move('etc/vomses', os.path.join(destdir, 'vomses'))
+
+    gridsecdir = os.path.join(destdir, 'grid-security')
+    if not os.path.exists(gridsecdir):
+        os.makedirs(gridsecdir)
+
+    vomsdir = os.path.join(gridsecdir, 'vomsdir')
+    newdir = os.path.join(gridsecdir, '.vomsdir.new')
+    olddir = os.path.join(gridsecdir, '.vomsdir.old')
 
     if os.path.exists(newdir):
         shutil.rmtree(newdir)
