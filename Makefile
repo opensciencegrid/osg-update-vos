@@ -2,6 +2,7 @@ VERSION = 1.0
 NAME = osg-update-vos
 NAME_VERSION = $(NAME)-$(VERSION)
 BINDIR = /usr/bin
+DOCDIR = /usr/share/doc/$(NAME_VERSION)
 
 AFS_UPSTREAM_DIR = /p/vdt/public/html/upstream/$(NAME)
 
@@ -14,6 +15,8 @@ clean:
 install:
 	mkdir -p $(DESTDIR)/$(BINDIR)
 	install -p -m 755 $(NAME) $(DESTDIR)/$(BINDIR)/$(NAME)
+	mkdir -p $(DESTDIR)/$(DOCDIR)
+	install -p -m 644 README $(DESTDIR)/$(DOCDIR)
 
 dist:
 	mkdir -p $(NAME_VERSION)
