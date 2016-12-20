@@ -88,12 +88,16 @@ def _move_vodata(destdir):
 
     if not os.path.exists(destdir):
         os.makedirs(destdir)
+    elif not os.path.isdir(destdir):
+        raise Error(destdir + " exists but is not a directory")
 
     shutil.move('etc/vomses', os.path.join(destdir, 'vomses'))
 
     gridsecdir = os.path.join(destdir, 'grid-security')
     if not os.path.exists(gridsecdir):
         os.makedirs(gridsecdir)
+    elif not os.path.isdir(gridsecdir):
+        raise Error(gridsecdir + " exists but is not a directory")
 
     vomsdir = os.path.join(gridsecdir, 'vomsdir')
     newdir = os.path.join(gridsecdir, '.vomsdir.new')
