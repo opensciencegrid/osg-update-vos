@@ -31,9 +31,9 @@ def get_options(argv):
     parser = OptionParser("%prog [options]\n")
 
     parser.add_option("--destdir", metavar="DIR", default='.',
-                      help="The directory to download VO data into. ")
-    parser.add_option("--repo", metavar="REPO", default=None,
-                      help="The specific yum repo to download the VO data from")
+                      help="The directory to download VO data into. Defaults to the current directory")
+    parser.add_option("--repo", metavar="REPO", default='osg',
+                      help="The specific yum repo to download the VO data from. Defaults to '%default'")
 
     options = parser.parse_args(argv[1:])[0] # raises SystemExit(2) on error
 
