@@ -1,15 +1,12 @@
-osg-update-vos
+Usage: osg-update-vos <destdir>
 
 Download VO data into a directory.
 
 VO data consists of a `vomses` file and `*.lsc` files in subdirectories
 under `vomsdir`. The layout of the downloaded data is:
 
-  (destdir)/vomses
-  (destdir)/grid-security/vomsdir/*/*.lsc
-
-where (destdir) is set via the command-line argument `--destdir` and
-defaults to the current directory if not specified.
+  <destdir>/vomses
+  <destdir>/grid-security/vomsdir/*/*.lsc
 
 The command-line argument `--repo` specifies the YUM repository to
 download the VO data from. This defaults to the `osg` repository.

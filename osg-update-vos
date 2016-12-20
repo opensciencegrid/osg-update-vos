@@ -28,16 +28,18 @@ class Error(Exception):
 
 def get_options(argv):
     "Parse, validate, and transform command-line options."
-    parser = OptionParser("%prog [options]\n")
+    parser = OptionParser("%prog [options] <destination>\n")
 
-    parser.add_option("--destdir", metavar="DIR", default='.',
-                      help="The directory to download VO data into. Defaults to the current directory")
     parser.add_option("--repo", metavar="REPO", default='osg',
                       help="The specific yum repo to download the VO data from. Defaults to '%default'")
 
-    options = parser.parse_args(argv[1:])[0] # raises SystemExit(2) on error
+    options, args = parser.parse_args(argv[1:]) # raises SystemExit(2) on error
+    if len(args) < 1:
+        parser.error("Destination not specified")
 
-    return options
+    destdir = args[0]
+
+    return options, destdir
 
 
 def type_of_exception(exception_object):
@@ -62,7 +64,7 @@ def _download_vodata(repo=None):
         else:
             raise
     except subprocess.CalledProcessError as err:
-        raise Error("Error downloading %s: %s" % ('vo-client', err))
+        raise Error("Error downloading vo-client: " + str(err))
 
     try:
         vodata_rpm = glob.glob('vo-client-*.rpm')[0]
@@ -128,9 +130,9 @@ def update_vodata(destdir, repo=None):
 
 
 def main():
-    options = get_options(sys.argv)
+    options, destdir = get_options(sys.argv)
     try:
-        update_vodata(options.destdir, options.repo)
+        update_vodata(destdir, options.repo)
     except Error as err:
         print(str(err), file=sys.stderr)
         return 1
