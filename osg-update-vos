@@ -40,10 +40,6 @@ def get_options(argv):
     return options, destdir
 
 
-def type_of_exception(exception_object):
-    "Return the class name of an exception as a string"
-    if isinstance(exception_object, Exception):
-        return str(exception_object.__class__.__name__)
 
 
 def _download_vodata(repo=None):
