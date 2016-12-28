@@ -13,9 +13,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import traceback
 
-from email.mime.text import MIMEText
 from optparse import OptionParser
 
 
