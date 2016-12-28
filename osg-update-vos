@@ -26,20 +26,32 @@ class Error(Exception):
 
 def get_options(argv):
     "Parse, validate, and transform command-line options."
-    parser = OptionParser("%prog [options] <destination>\n")
+    parser = OptionParser("%prog [--repo <REPO>] [--location root|<DIR>]\n")
 
     parser.add_option("--repo", metavar="REPO", default='osg',
                       help="The specific yum repo to download the VO data from. Defaults to '%default'")
+    parser.add_option("--location", metavar="DIR", default='root',
+                      help="The location to download the VO data to. If not specified, or specified as 'root', will "
+                      "download to $OSG_LOCATION/etc in a tarball install, or /etc in a non-tarball install")
 
-    options, args = parser.parse_args(argv[1:]) # raises SystemExit(2) on error
-    if len(args) < 1:
-        parser.error("Destination not specified")
+    options, _ = parser.parse_args(argv[1:]) # raises SystemExit(2) on error
 
-    destdir = args[0]
+    if not options.location or options.location == 'root':
+        if is_rpm_install(argv):
+            options.location = '/etc'
+        else:
+            osg_location = os.environ.get('OSG_LOCATION', '')
+            if os.path.exists(osg_location):
+                options.location = os.path.join(osg_location, 'etc')
+            else:
+                raise Error("$OSG_LOCATION is not set or doesn't exist. Did you source setup.sh?")
 
-    return options, destdir
+    return options
 
 
+def is_rpm_install(argv):
+    ret = os.system("rpm -qf " + pipes.quote(argv[0]) + " >/dev/null 2>&1")
+    return (ret >> 8) == 0
 
 
 def _download_vodata(repo=None):
@@ -124,13 +136,13 @@ def update_vodata(destdir, repo=None):
         print("VO data downloaded to " + destdir)
     finally:
         os.chdir(oldcwd)
-        shutil.rmtree(tempdir)
+        shutil.rmtree(tempdir, ignore_errors=True)
 
 
-def main():
-    options, destdir = get_options(sys.argv)
+def main(argv):
     try:
-        update_vodata(destdir, options.repo)
+        options = get_options(argv)
+        update_vodata(options.location, options.repo)
     except Error as err:
         print("Error: " + str(err), file=sys.stderr)
         return 1
@@ -138,5 +150,5 @@ def main():
     return 0
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main(sys.argv))
 

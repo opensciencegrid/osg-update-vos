@@ -1,6 +1,10 @@
-Usage: osg-update-vos <destdir>
+Usage: osg-update-vos [--repo <repo>] [--location root|<destdir>]
 
 Download VO data into a directory.
+
+The `--location` argument specified the location to download VO data to.
+If unspecified, or "root", will use `/etc` in an RPM install and
+`$OSG_LOCATION/etc` in a tarball install.
 
 VO data consists of a `vomses` file and `*.lsc` files in subdirectories
 under `vomsdir`. The layout of the downloaded data is:
