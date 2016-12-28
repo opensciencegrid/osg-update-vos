@@ -1,4 +1,4 @@
-VERSION = 1.0
+VERSION = 1.1
 NAME = osg-update-vos
 NAME_VERSION = $(NAME)-$(VERSION)
 BINDIR = /usr/bin
