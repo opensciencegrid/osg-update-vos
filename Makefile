@@ -1,7 +1,7 @@
 VERSION = 1.1
 NAME = osg-update-vos
 NAME_VERSION = $(NAME)-$(VERSION)
-BINDIR = /usr/bin
+SBINDIR = /usr/sbin
 DOCDIR = /usr/share/doc/$(NAME_VERSION)
 
 AFS_UPSTREAM_DIR = /p/vdt/public/html/upstream/$(NAME)
@@ -13,8 +13,8 @@ clean:
 	rm -f *.py[co] *~
 
 install:
-	mkdir -p $(DESTDIR)/$(BINDIR)
-	install -p -m 755 $(NAME) $(DESTDIR)/$(BINDIR)/$(NAME)
+	mkdir -p $(DESTDIR)/$(SBINDIR)
+	install -p -m 755 $(NAME) $(DESTDIR)/$(SBINDIR)/$(NAME)
 	mkdir -p $(DESTDIR)/$(DOCDIR)
 	install -p -m 644 README $(DESTDIR)/$(DOCDIR)
 
