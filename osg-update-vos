@@ -80,6 +80,20 @@ def _download_vodata(repo=None):
     subprocess.check_call("rpm2cpio %s | cpio -id --quiet" % pipes.quote(vodata_rpm), shell=True)
 
 
+def rmtree(path, ignore_errors=False):
+    """Remove `path`, recursively deleting if it is a directory.
+    Wrapper around shutil.rmtree() but also handles non-directories,
+    symlinks to directories, and does not a raise an error if `path` does not
+    exist.
+    """
+    if not os.path.exists(path):
+        return
+    if not os.path.isdir(path) or os.path.islink(path):
+        os.unlink(path)
+    else:
+        shutil.rmtree(path, ignore_errors)
+
+
 def _move_vodata(destdir):
     """Move VO data to destdir. Current directory must be the directory that
     vomses and vomsdir are in, and destdir must be an absolute path.
@@ -91,13 +105,18 @@ def _move_vodata(destdir):
     #
     # Move it so that "etc" is replaced by destdir.
     # Try not to leave vomsdir in an inconsistent state if an error happens.
+    # Leave existing files/directories behind as vomses.old and vomsdir.old.
 
     if not os.path.exists(destdir):
         os.makedirs(destdir)
     elif not os.path.isdir(destdir):
         raise Error(destdir + " exists but is not a directory")
 
-    shutil.move('etc/vomses', os.path.join(destdir, 'vomses'))
+    vomsesfile = os.path.join(destdir, 'vomses')
+    oldvomsesfile = os.path.join(destdir, 'vomses.old')
+    if os.path.exists(vomsesfile):
+        os.rename(vomsesfile, oldvomsesfile)
+    shutil.move('etc/vomses', vomsesfile)
 
     gridsecdir = os.path.join(destdir, 'grid-security')
     if not os.path.exists(gridsecdir):
@@ -106,22 +125,16 @@ def _move_vodata(destdir):
         raise Error(gridsecdir + " exists but is not a directory")
 
     vomsdir = os.path.join(gridsecdir, 'vomsdir')
-    newdir = os.path.join(gridsecdir, '.vomsdir.new')
-    olddir = os.path.join(gridsecdir, '.vomsdir.old')
+    newdir = os.path.join(gridsecdir, 'vomsdir.new')
+    olddir = os.path.join(gridsecdir, 'vomsdir.old')
 
-    if os.path.exists(newdir):
-        shutil.rmtree(newdir)
-
+    rmtree(newdir)
     shutil.move('etc/grid-security/vomsdir', newdir)
 
-    if os.path.exists(olddir):
-        shutil.rmtree(olddir)
-
     if os.path.exists(vomsdir):
+        rmtree(olddir)
         os.rename(vomsdir, olddir)
     os.rename(newdir, vomsdir)
-
-    shutil.rmtree(olddir, ignore_errors=True)
 
 
 def update_vodata(destdir, repo=None):
@@ -136,7 +149,7 @@ def update_vodata(destdir, repo=None):
         print("VO data downloaded to " + destdir)
     finally:
         os.chdir(oldcwd)
-        shutil.rmtree(tempdir, ignore_errors=True)
+        rmtree(tempdir, ignore_errors=True)
 
 
 def main(argv):
