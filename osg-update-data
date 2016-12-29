@@ -1,0 +1,53 @@
+#!/bin/bash
+usage() {
+    cat <<END
+        Update CA and VO data.
+
+        Usage: ${0##*/} [options]
+
+        Options:
+            -h|-help     -- Display this usage message and exit.
+            -l|-location -- Location to place updated data
+                            Default is /etc or \$OSG_LOCATION/etc
+END
+}
+
+die_with_usage() { echo "$@" >&2; usage; exit 2; }
+
+get_options() {
+    local go
+    go=$(getopt -a -o 'l:h' --long location:,help \
+                -n "${0##*/}" -- "$@") \
+        || die_with_usage "Invalid argument"
+
+    eval set -- "$go"
+
+    while true; do
+        case "$1" in
+            -l|--location) location=$2; shift 2 ;;
+            -h|--help) usage; exit 0;;
+            --) shift; break ;;
+            *) echo "Internal error parsing arguments" >&2; exit 1 ;;
+        esac
+    done
+}
+
+location=${OSG_LOCATION:-}/etc
+get_options
+
+cert_dir=$location/grid-security/certificates
+
+if ! which osg-ca-manage &>/dev/null; then
+    echo "osg-ca-manage not found; install osg-ca-scripts" >&2
+    exit 1
+fi
+
+if [[ ! -d $cert_dir ]]; then
+    echo "The expected certificates directory, '$cert_dir'" >&2
+    echo "does not exist or is not a directory. You may need to run" >&2
+    echo "'osg-ca-manage setupCA' to download certificates for the first time." >&2
+    exit 1
+fi
+
+osg-ca-manage --cert-dir $cert_dir refreshCA
+osg-update-vos --location $location

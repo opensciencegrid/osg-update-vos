@@ -15,12 +15,13 @@ clean:
 install:
 	mkdir -p $(DESTDIR)/$(SBINDIR)
 	install -p -m 755 $(NAME) $(DESTDIR)/$(SBINDIR)/$(NAME)
+	install -p -m 755 osg-update-data $(DESTDIR)/$(SBINDIR)/osg-update-data
 	mkdir -p $(DESTDIR)/$(DOCDIR)
 	install -p -m 644 README $(DESTDIR)/$(DOCDIR)
 
 dist:
 	mkdir -p $(NAME_VERSION)
-	cp -rp $(NAME) Makefile README $(NAME_VERSION)/
+	cp -rp $(NAME) Makefile README osg-update-data $(NAME_VERSION)/
 	tar czf $(NAME_VERSION).tar.gz $(NAME_VERSION)/ --exclude='*/.git*' --exclude='*/*.py[co]' --exclude='*/*~'
 
 upstream: dist
