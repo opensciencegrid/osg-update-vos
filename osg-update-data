@@ -49,5 +49,6 @@ if [[ ! -d $cert_dir ]]; then
     exit 1
 fi
 
-osg-ca-manage --cert-dir $cert_dir refreshCA
 osg-update-vos --location $location
+osg-ca-manage --cert-dir $cert_dir refreshCA
+
