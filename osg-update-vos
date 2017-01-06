@@ -28,8 +28,8 @@ def get_options(argv):
     "Parse, validate, and transform command-line options."
     parser = OptionParser("%prog [--repo <REPO>] [--location root|<DIR>]\n")
 
-    parser.add_option("--repo", metavar="REPO", default='osg',
-                      help="The specific yum repo to download the VO data from. Defaults to '%default'")
+    parser.add_option("--repo", metavar="REPO", default=None,
+                      help="The specific yum repo to download the VO data from. Downloads from the OSG repo by default.")
     parser.add_option("--location", metavar="DIR", default='root',
                       help="The location to download the VO data to. If not specified, or specified as 'root', will "
                       "download to $OSG_LOCATION/etc in a tarball install, or /etc in a non-tarball install")
@@ -54,6 +54,33 @@ def is_rpm_install(argv):
     return (ret >> 8) == 0
 
 
+def _get_osg_repo_args():
+    """Get the arguments to yumdownloader for using the osg repo whose repo
+    definition file is possibly in a tarball client environment.
+    """
+    args = []
+
+    # point yum at the repo file
+    repos_dir = os.path.join(os.environ.get('OSG_LOCATION', '/'), 'etc/yum.repos.d')
+    osg_repo_file = os.path.join(repos_dir, 'osg-el6.repo')
+    if not os.path.exists(osg_repo_file):
+        osg_repo_file = os.path.join(repos_dir, 'osg.repo')
+        if not os.path.exists(osg_repo_file):
+            raise Error("Repo definition file for OSG repos not found. Is 'osg-release' installed?")
+
+    args.append('--config=' + osg_repo_file)
+
+    # override the gpg key location for the repo
+    gpg_key_file = os.path.join(os.environ.get('OSG_LOCATION', '/'),
+                                'etc/pki/rpm-gpg/RPM-GPG-KEY-OSG')
+    if not os.path.exists(gpg_key_file):
+        raise Error("OSG repo GPG key not found. Is 'osg-release' installed?")
+
+    args.append("--setopt=osg.gpgkey=file://" + gpg_key_file)
+
+    return args
+
+
 def _download_vodata(repo=None):
     """Download and extract the vo-client RPM. Current directory should be an
     empty temporary directory.
@@ -62,6 +89,12 @@ def _download_vodata(repo=None):
     if repo:
         args.append('--disablerepo=*')
         args.append('--enablerepo=' + repo)
+    else:
+        # Download from the osg repo. In a tarball install, the repo
+        # definition file may be in $OSG_LOCATION/etc/yum.repos.d/...
+        # so use that if available.
+        args.extend(_get_osg_repo_args())
+
     try:
         subprocess.check_call(args)
     except OSError as err:
