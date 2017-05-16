@@ -85,25 +85,30 @@ def _download_vodata(repo=None):
     """Download and extract the vo-client RPM. Current directory should be an
     empty temporary directory.
     """
-    args = ['yumdownloader', 'vo-client']
+    cleancachecmd = ['yum', 'clean', 'all']
+    downloadercmd = ['yumdownloader', 'vo-client']
     if repo:
-        args.append('--disablerepo=*')
-        args.append('--enablerepo=' + repo)
+        args = ['--disablerepo=*', '--enablerepo=' + repo]
     else:
         # Download from the osg repo. In a tarball install, the repo
         # definition file may be in $OSG_LOCATION/etc/yum.repos.d/...
         # so use that if available.
-        args.extend(_get_osg_repo_args())
+        args = _get_osg_repo_args()
+    assert args, "one of these two shoulda worked"
 
-    try:
-        subprocess.check_call(args)
-    except OSError as err:
-        if err.errno == errno.ENOENT:
-            raise Error("yumdownloader not found -- install yum-utils")
-        else:
-            raise
-    except subprocess.CalledProcessError as err:
-        raise Error("Couldn't download vo-client: " + str(err))
+    for command, notfoundcomplaint, errorcomplaint in \
+            [ (cleancachecmd, "yum not found -- install yum",                 "Couldn't clean yum cache: ")
+            , (downloadercmd, "yumdownloader not found -- install yum-utils", "Couldn't download vo-client: ")
+            ]:
+        try:
+            subprocess.check_call(command + args)
+        except EnvironmentError as err:
+            if err.errno == errno.ENOENT:
+                raise Error(notfoundcomplaint)
+            else:
+                raise
+        except subprocess.CalledProcessError as err:
+            raise Error(errorcomplaint + str(err))
 
     try:
         vodata_rpm = glob.glob('vo-client-*.rpm')[0]
