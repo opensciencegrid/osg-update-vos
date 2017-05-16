@@ -25,6 +25,7 @@ dist:
 	tar czf $(NAME_VERSION).tar.gz $(NAME_VERSION)/ --exclude='*/.git*' --exclude='*/*.py[co]' --exclude='*/*~'
 
 upstream: dist
+	[[ -e $(AFS_UPSTREAM_DIR)/$(VERSION)/$(NAME_VERSION).tar.gz ]] && { echo "version already exists. remove it or bump version"; exit 1; }
 	mkdir -p $(AFS_UPSTREAM_DIR)/$(VERSION)
 	mv -f $(NAME_VERSION).tar.gz $(AFS_UPSTREAM_DIR)/$(VERSION)/
 	rm -rf $(NAME_VERSION)
