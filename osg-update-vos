@@ -8,7 +8,10 @@ from __future__ import print_function
 import errno
 import glob
 import os
-import pipes
+try:
+    from pipes import quote
+except ImportError:
+    from shlex import quote
 import shutil
 import subprocess
 import sys
@@ -50,7 +53,7 @@ def get_options(argv):
 
 
 def is_rpm_install(argv):
-    ret = os.system("rpm -qf " + pipes.quote(argv[0]) + " >/dev/null 2>&1")
+    ret = os.system("rpm -qf " + quote(argv[0]) + " >/dev/null 2>&1")
     return (ret >> 8) == 0
 
 
@@ -115,7 +118,7 @@ def _download_vodata(repo=None):
     except IndexError as err:
         raise Error("Downloaded RPM not found")
 
-    subprocess.check_call("rpm2cpio %s | cpio -id --quiet" % pipes.quote(vodata_rpm), shell=True)
+    subprocess.check_call("rpm2cpio %s | cpio -id --quiet" % quote(vodata_rpm), shell=True)
 
 
 def rmtree(path, ignore_errors=False):
