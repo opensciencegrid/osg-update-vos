@@ -1,17 +1,12 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # (ignore bad script name) pylint: disable=C0103
 """
 A script for downloading VO data.
 """
-from __future__ import print_function
-
 import errno
 import glob
 import os
-try:
-    from pipes import quote
-except ImportError:
-    from shlex import quote
+from shlex import quote
 import shutil
 import subprocess
 import sys
