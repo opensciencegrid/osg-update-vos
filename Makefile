@@ -1,4 +1,4 @@
-VERSION = 1.4.0
+VERSION = 1.4.1
 NAME = osg-update-vos
 NAME_VERSION = $(NAME)-$(VERSION)
 SBINDIR = /usr/sbin
