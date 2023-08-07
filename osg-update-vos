@@ -3,7 +3,6 @@
 """
 A script for downloading VO data.
 """
-import errno
 import glob
 import os
 from shlex import quote
