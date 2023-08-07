@@ -60,11 +60,9 @@ def _get_osg_repo_args():
 
     # point yum at the repo file
     repos_dir = os.path.join(os.environ.get('OSG_LOCATION', '/'), 'etc/yum.repos.d')
-    osg_repo_file = os.path.join(repos_dir, 'osg-el6.repo')
+    osg_repo_file = os.path.join(repos_dir, 'osg.repo')
     if not os.path.exists(osg_repo_file):
-        osg_repo_file = os.path.join(repos_dir, 'osg.repo')
-        if not os.path.exists(osg_repo_file):
-            raise Error("Repo definition file for OSG repos not found. Is 'osg-release' installed?")
+        raise Error("Repo definition file for OSG repos not found. Is 'osg-release' installed?")
 
     args.append('--config=' + osg_repo_file)
 
