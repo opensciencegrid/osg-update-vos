@@ -98,11 +98,8 @@ def _download_vodata(repo=None):
             ]:
         try:
             subprocess.check_call(command + args)
-        except EnvironmentError as err:
-            if err.errno == errno.ENOENT:
-                raise Error(notfoundcomplaint)
-            else:
-                raise
+        except FileNotFoundError as err:
+            raise Error(notfoundcomplaint)
         except subprocess.CalledProcessError as err:
             raise Error(errorcomplaint + str(err))
 
