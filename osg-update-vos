@@ -3,7 +3,6 @@
 """
 A script for downloading VO data.
 """
-import errno
 import glob
 import os
 from shlex import quote
@@ -49,7 +48,7 @@ def get_options(argv):
 
 def is_rpm_install(argv):
     ret = os.system("rpm -qf " + quote(argv[0]) + " >/dev/null 2>&1")
-    return (ret >> 8) == 0
+    return ret == 0
 
 
 def _get_osg_repo_args():
@@ -60,11 +59,9 @@ def _get_osg_repo_args():
 
     # point yum at the repo file
     repos_dir = os.path.join(os.environ.get('OSG_LOCATION', '/'), 'etc/yum.repos.d')
-    osg_repo_file = os.path.join(repos_dir, 'osg-el6.repo')
+    osg_repo_file = os.path.join(repos_dir, 'osg.repo')
     if not os.path.exists(osg_repo_file):
-        osg_repo_file = os.path.join(repos_dir, 'osg.repo')
-        if not os.path.exists(osg_repo_file):
-            raise Error("Repo definition file for OSG repos not found. Is 'osg-release' installed?")
+        raise Error("Repo definition file for OSG repos not found. Is 'osg-release' installed?")
 
     args.append('--config=' + osg_repo_file)
 
@@ -100,11 +97,8 @@ def _download_vodata(repo=None):
             ]:
         try:
             subprocess.check_call(command + args)
-        except EnvironmentError as err:
-            if err.errno == errno.ENOENT:
-                raise Error(notfoundcomplaint)
-            else:
-                raise
+        except FileNotFoundError as err:
+            raise Error(notfoundcomplaint)
         except subprocess.CalledProcessError as err:
             raise Error(errorcomplaint + str(err))
 
