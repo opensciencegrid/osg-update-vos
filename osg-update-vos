@@ -57,21 +57,25 @@ def _get_osg_repo_args():
     """
     args = []
 
+    osg_location = os.environ.get('OSG_LOCATION', '/')
     # point yum at the repo file
-    repos_dir = os.path.join(os.environ.get('OSG_LOCATION', '/'), 'etc/yum.repos.d')
+    repos_dir = os.path.join(osg_location, 'etc/yum.repos.d')
     osg_repo_file = os.path.join(repos_dir, 'osg.repo')
     if not os.path.exists(osg_repo_file):
         raise Error("Repo definition file for OSG repos not found. Is 'osg-release' installed?")
 
     args.append('--config=' + osg_repo_file)
 
-    # override the gpg key location for the repo
-    gpg_key_file = os.path.join(os.environ.get('OSG_LOCATION', '/'),
-                                'etc/pki/rpm-gpg/RPM-GPG-KEY-OSG')
-    if not os.path.exists(gpg_key_file):
-        raise Error("OSG repo GPG key not found. Is 'osg-release' installed?")
+    # The GPG key location in the repo file assumes the keys are in a
+    # rootly location; we need to override them if we're in a tarball install.
+    # We don't know the exact name of the key file but yum allows multiple keys
+    # so we can take advantage of that.
+    gpg_key_files_list = glob.glob(os.path.join(osg_location,
+                                                'etc/pki/rpm-gpg/RPM-GPG-KEY-OSG*'))
+    if not gpg_key_files_list:
+        raise Error("OSG repo GPG key(s) not found. Is 'osg-release' installed?")
 
-    args.append("--setopt=osg.gpgkey=file://" + gpg_key_file)
+    args.append("--setopt=osg.gpgkey=%s" % " ".join("file://" + gkf for gkf in gpg_key_files_list))
 
     return args
 
